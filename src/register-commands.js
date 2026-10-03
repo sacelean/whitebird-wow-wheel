@@ -17,6 +17,16 @@ const commands = [
     .setDescription('Libera la asignación de un miembro (oficiales)')
     .addUserOption((option) => option.setName('usuario').setDescription('Miembro que podrá volver a girar').setRequired(true)),
   new SlashCommandBuilder()
+    .setName('alter-spec')
+    .setDescription('Cambia el rol/spec de la clase asignada a un miembro (oficiales)')
+    .addUserOption((option) => option.setName('usuario').setDescription('Miembro cuyo alter quieres actualizar').setRequired(true))
+    .addStringOption((option) => option.setName('spec').setDescription('Rol de combate').setRequired(true)
+      .addChoices(
+        { name: 'Tanque', value: 'Tanque' },
+        { name: 'DPS', value: 'DPS' },
+        { name: 'Sanador', value: 'Sanador' }
+      )),
+  new SlashCommandBuilder()
     .setName('alter-reset-all')
     .setDescription('Libera todas las clases e inicia una ronda (oficiales)')
     .addBooleanOption((option) => option.setName('confirmar').setDescription('Confirma el reinicio de la ronda').setRequired(true))

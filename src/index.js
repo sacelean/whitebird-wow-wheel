@@ -15,7 +15,7 @@ import {
 import { CLASSES, CLASS_BY_NAME } from './classes.js';
 import {
   assignClass, getAssignment, getAssignments, getPanel, getUsedClasses,
-  resetGuild, resetUser, savePanel
+  resetGuild, resetUser, savePanel, updateRole
 } from './database.js';
 import { makeWheelImage } from './wheel-image.js';
 
@@ -26,6 +26,7 @@ const officerRoleIds = new Set((process.env.OFFICER_ROLE_IDS || '').split(',').m
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const SPIN_BUTTON_ID = 'whitebird:spin';
 const BRAND = 0x5865f2;
+const pickRandom = (items) => items[randomInt(items.length)];
 
 function isOfficer(interaction) {
   if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) return true;
@@ -97,9 +98,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (!available.length) return interaction.reply({ content: 'La ronda ya terminó: las 12 clases están asignadas. Pide a un oficial que use `/alter-reset-all` para iniciar otra.', flags: MessageFlags.Ephemeral });
 
       // SQLite uniqueness constraints protect both one assignment per player and one player per class.
-      const picked = available[randomInt(available.length)];
+      const picked = pickRandom(available);
+      const pickedRole = pickRandom(picked.roles);
       try {
-        assignClass(interaction.guildId, interaction.user.id, picked.name);
+        assignClass(interaction.guildId, interaction.user.id, picked.name, pickedRole);
       } catch (error) {
         const nowAssigned = getAssignment(interaction.guildId, interaction.user.id);
         if (nowAssigned) return interaction.reply({ content: `Ya tienes **${nowAssigned.class_name}** esta ronda.`, flags: MessageFlags.Ephemeral });
@@ -114,7 +116,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const resultEmbed = new EmbedBuilder()
         .setColor(Number.parseInt(wowClass.color.slice(1), 16))
         .setTitle(`${wowClass.emoji} ¡Te ha tocado ${wowClass.name}!`)
-        .setDescription(`Tu clase de alter para Whitebird queda registrada como **${wowClass.name}**. ¡A disfrutarla!`)
+        .setDescription(`Tu asignación para Whitebird queda registrada:\n\n**Clase:** ${wowClass.name}\n**Rol:** ${pickedRole}\n\n¡A disfrutarla!`)
         .setImage('attachment://whitebird-wheel.png')
         .setFooter({ text: `Asignación ${total} de ${CLASSES.length} · La lista es visible con /alter-list` });
       const wheel = await makeWheelImage(CLASSES.filter((entry) => !getUsedClasses(interaction.guildId).has(entry.name)).map((entry) => entry.name));
@@ -137,13 +139,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.commandName === 'mi-alter') {
       const assignment = getAssignment(interaction.guildId, interaction.user.id);
-      return interaction.reply({ content: assignment ? `Tu alter asignado es **${assignment.class_name}**.` : 'Aún no has girado. Busca el mensaje de la ruleta y pulsa **Girar la ruleta**.', flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: assignment ? `Tu asignación es **${assignment.class_name}**${assignment.role ? ` · **${assignment.role}**` : ''}.` : 'Aún no has girado. Busca el mensaje de la ruleta y pulsa **Girar la ruleta**.', flags: MessageFlags.Ephemeral });
     }
 
     if (interaction.commandName === 'alter-list') {
       const rows = getAssignments(interaction.guildId);
       const body = rows.length
-        ? rows.map((entry) => `**${entry.class_name}** — <@${entry.user_id}>`).join('\n')
+        ? rows.map((entry) => `**${entry.class_name}**${entry.role ? ` · ${entry.role}` : ''} — <@${entry.user_id}>`).join('\n')
         : 'Todavía no hay asignaciones.';
       return interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND).setTitle(`📜 Asignaciones Whitebird (${rows.length}/12)`).setDescription(body).setFooter({ text: 'Cada clase se asigna una sola vez por ronda.' })], flags: MessageFlags.Ephemeral });
     }
@@ -154,6 +156,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const removed = resetUser(interaction.guildId, target.id);
       if (removed) await refreshPanel(interaction.guildId);
       return interaction.reply({ content: removed ? `Se ha liberado la clase de <@${target.id}>. Ya puede volver a girar.` : `<@${target.id}> no tenía una clase asignada.`, flags: MessageFlags.Ephemeral });
+    }
+
+    if (interaction.commandName === 'alter-spec') {
+      if (!isOfficer(interaction)) return interaction.reply(unauthorizedReply());
+      const target = interaction.options.getUser('usuario', true);
+      const requestedRole = interaction.options.getString('spec', true);
+      const assignment = getAssignment(interaction.guildId, target.id);
+      if (!assignment) return interaction.reply({ content: `<@${target.id}> no tiene un alter asignado esta ronda.`, flags: MessageFlags.Ephemeral });
+      const wowClass = CLASS_BY_NAME.get(assignment.class_name);
+      if (!wowClass?.roles.includes(requestedRole)) {
+        return interaction.reply({ content: `**${assignment.class_name}** no puede tener rol **${requestedRole}**. Opciones válidas: ${wowClass?.roles.join(', ') || 'ninguna'}.`, flags: MessageFlags.Ephemeral });
+      }
+      updateRole(interaction.guildId, target.id, requestedRole);
+      return interaction.reply({ content: `Actualizado: el alter **${assignment.class_name}** de <@${target.id}> ahora tiene rol **${requestedRole}**.`, flags: MessageFlags.Ephemeral });
     }
 
     if (interaction.commandName === 'alter-reset-all') {

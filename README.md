@@ -6,12 +6,14 @@ Bot de Discord para repartir las 12 clases de WoW entre miembros de Whitebird. P
 
 - Un oficial publica el panel con `/alter`.
 - Cada miembro pulsa **Girar la ruleta** una vez por ronda. El bot muestra el resultado de forma privada y actualiza la imagen y las clases disponibles en el panel.
+- El resultado también incluye un rol elegido al azar entre los que puede desempeñar esa clase: Tanque, DPS o Sanador. La clase se sortea primero y el rol se guarda junto con ella.
 - Ninguna clase se repite durante una ronda. Al repartir las 12, el botón se desactiva.
 - `/mi-alter` consulta tu resultado y `/alter-list` muestra la lista completa (visible solo para quien ejecuta el comando).
+- `/alter-spec usuario spec` permite a un oficial cambiar el rol de un alter asignado, validando que su clase pueda desempeñarlo.
 - `/alter-reset usuario` libera una asignación individual; `/alter-reset-all confirmar:true` empieza una ronda nueva.
 - Los resultados se guardan en SQLite, separados por servidor. Los reinicios del proceso no los borran.
 
-Clases incluidas: Druid, Hunter, Mage, Monk, Paladin, Priest, Rogue, Shaman, Warlock, Warrior, DK y DH.
+Clases incluidas: Druid, Hunter, Mage, Monk, Paladin, Priest, Rogue, Shaman, Warlock, Warrior, DK y DH. La imagen de la ruleta dibuja las letras como formas vectoriales para evitar problemas de fuentes en Docker.
 
 ## 1. Crear la aplicación y el bot
 
@@ -38,7 +40,7 @@ OFFICER_ROLE_IDS=id_rol_oficial,id_otro_rol
 
 `DISCORD_GUILD_ID` es opcional pero recomendable inicialmente: registra los comandos al instante en Whitebird. Si se omite, se publican globalmente y Discord puede tardar un rato en mostrarlos. Para copiar IDs activa **Ajustes de usuario → Avanzado → Modo desarrollador** y usa **Copiar ID** en servidor y roles.
 
-Los comandos de reinicio solo están disponibles para miembros con **Gestionar servidor** o alguno de los roles indicados en `OFFICER_ROLE_IDS`. Déjalo vacío para basarte únicamente en el permiso de Discord. Reinicia el proceso después de cambiar `.env`.
+Los comandos `/alter-reset`, `/alter-reset-all` y `/alter-spec` solo están disponibles para miembros con **Gestionar servidor** o alguno de los roles indicados en `OFFICER_ROLE_IDS`. Déjalo vacío para basarte únicamente en el permiso de Discord. Reinicia el proceso después de cambiar `.env`.
 
 ## 3. Ejecutar con Docker (recomendado)
 
@@ -53,7 +55,7 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
-La base persistente está en `data/whitebird.sqlite`, montada fuera del contenedor. Para actualizar el bot, descarga la versión nueva del proyecto y ejecuta `docker compose up -d --build`. Haz una copia de `data/` antes de actualizar o mover el servicio.
+La base persistente está en `data/whitebird.sqlite`, montada fuera del contenedor. Para actualizar el bot, descarga la versión nueva del proyecto y ejecuta `docker compose build`, `docker compose run --rm whitebird-wow-wheel npm run register` y `docker compose up -d`. Registrar de nuevo actualiza la lista de comandos de Discord. Haz una copia de `data/` antes de actualizar o mover el servicio.
 
 ## Alternativa: ejecutar con Node.js
 
@@ -75,7 +77,8 @@ Deja el proceso en un equipo/servidor que esté encendido. Para que se recupere 
 2. Ejecuta `/alter` en el canal donde quieras dejar el panel (o elige el canal en la opción `canal`).
 3. Los miembros usan el botón del mensaje.
 4. Comprueba resultados con `/alter-list`; cada miembro también puede usar `/mi-alter`.
-5. Para iniciar temporada nueva, un oficial ejecuta `/alter-reset-all` y elige `confirmar: true`.
+5. Un oficial puede ajustar el rol con `/alter-spec usuario spec`.
+6. Para iniciar temporada nueva, un oficial ejecuta `/alter-reset-all` y elige `confirmar: true`.
 
 No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirían asignando, pero `/alter` registra el panel que el bot actualizará. Si borras el panel, publica otro con `/alter`.
 
@@ -88,3 +91,5 @@ No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirí
 - `Dockerfile` y `compose.yaml`: despliegue persistente.
 
 El bot no asigna roles de Discord automáticamente; la clase queda guardada y visible en la lista del bot.
+
+Al actualizar desde la primera versión, se conservan las clases ya asignadas y el bot les añade un rol compatible durante el arranque.
