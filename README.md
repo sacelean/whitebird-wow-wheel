@@ -4,7 +4,7 @@ Bot de Discord para repartir las 12 clases de WoW entre miembros de Whitebird. P
 
 ## Cómo funciona
 
-- Un oficial publica el panel con `/alter`.
+- Un oficial publica el panel con `/ruleta`.
 - Cada miembro pulsa **Girar la ruleta** una vez por ronda. El bot muestra el resultado de forma privada y actualiza la imagen y las clases disponibles en el panel.
 - El resultado también incluye un rol elegido al azar entre los que puede desempeñar esa clase: Tanque, DPS o Sanador. La clase se sortea primero y el rol se guarda junto con ella.
 - Ninguna clase se repite durante una ronda. Al repartir las 12, el botón se desactiva.
@@ -74,13 +74,13 @@ Deja el proceso en un equipo/servidor que esté encendido. Para que se recupere 
 ## Primer uso en Whitebird
 
 1. Espera a que el bot aparezca conectado.
-2. Ejecuta `/alter` en el canal donde quieras dejar el panel (o elige el canal en la opción `canal`).
+2. Ejecuta `/ruleta` en el canal donde quieras dejar el panel (o elige el canal en la opción `canal`).
 3. Los miembros usan el botón del mensaje.
 4. Comprueba resultados con `/alter-list`; cada miembro también puede usar `/mi-alter`.
 5. Un oficial puede ajustar el rol con `/alter-spec usuario spec`.
 6. Para iniciar temporada nueva, un oficial ejecuta `/alter-reset-all` y elige `confirmar: true`.
 
-No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirían asignando, pero `/alter` registra el panel que el bot actualizará. Si borras el panel, publica otro con `/alter`.
+No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirían asignando, pero `/ruleta` registra el panel que el bot actualizará. Si borras el panel, publica otro con `/ruleta`.
 
 ## Estructura
 

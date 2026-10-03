@@ -47,7 +47,7 @@ export async function makeWheelImage(remainingNames = CLASSES.map((item) => item
     const mid = start + slice / 2;
     const label = polar(207, mid);
     const opacity = remainingNames.includes(item.name) ? 1 : 0.23;
-    const textColor = ['#ffffff', '#fff468', '#aad372', '#3fc7eb', '#ffffff'].includes(item.color) ? '#15202b' : '#ffffff';
+    const textColor = ['#ffffff', '#fff468', '#aad372', '#3fc7eb', '#00ff98'].includes(item.color) ? '#15202b' : '#ffffff';
     return `<path d="M ${CENTER} ${CENTER} L ${a.x} ${a.y} A ${RADIUS} ${RADIUS} 0 0 1 ${b.x} ${b.y} Z" fill="${item.color}" fill-opacity="${opacity}" stroke="#111827" stroke-width="3"/>
       <g transform="translate(${label.x} ${label.y}) rotate(${(mid * 180 / Math.PI) + 90})" opacity="${opacity}">${pixelText(item.name.toUpperCase(), 2.4, 1.3, textColor)}</g>`;
   }).join('');

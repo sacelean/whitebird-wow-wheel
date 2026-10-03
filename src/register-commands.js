@@ -7,7 +7,7 @@ if (!token || !clientId) throw new Error('Configura DISCORD_TOKEN y DISCORD_CLIE
 
 const commands = [
   new SlashCommandBuilder()
-    .setName('alter')
+    .setName('ruleta-alter')
     .setDescription('Publica la ruleta visual de clases de WoW')
     .addChannelOption((option) => option.setName('canal').setDescription('Canal donde publicar la ruleta').setRequired(false)),
   new SlashCommandBuilder().setName('mi-alter').setDescription('Consulta tu clase asignada'),

@@ -127,7 +127,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
     if (!interaction.guildId) return interaction.reply({ content: 'Este comando solo funciona en un servidor.', flags: MessageFlags.Ephemeral });
 
-    if (interaction.commandName === 'alter') {
+    if (interaction.commandName === 'ruleta-alter') {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       const channel = interaction.options.getChannel('canal') || interaction.channel;
       if (!channel?.isTextBased() || !channel.send) return interaction.editReply('Elige un canal de texto.');
