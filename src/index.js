@@ -52,7 +52,7 @@ function panelEmbed(usedNames = new Set()) {
     .setTitle('🎰 Ruleta de alters · Whitebird')
     .setDescription('Pulsa el botón para recibir tu clase. Cada miembro puede girar una vez por ronda y cada clase se asigna a una sola persona.')
     .addFields(
-      { name: `Disponibles (${left.length}/12)`, value: remainingText },
+      { name: `Disponibles (${left.length}/${CLASSES.length})`, value: remainingText },
       { name: 'Ya asignadas', value: usedText }
     )
     .setImage('attachment://whitebird-wheel.png')
@@ -97,7 +97,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (previous) return interaction.reply({ content: `Ya tienes **${previous.class_name}** esta ronda. Pide a un oficial que reinicie tu asignación si necesitas volver a tirar.`, flags: MessageFlags.Ephemeral });
 
       const available = CLASSES.filter((entry) => !getUsedClasses(interaction.guildId).has(entry.name));
-      if (!available.length) return interaction.reply({ content: 'La ronda ya terminó: las 12 clases están asignadas. Pide a un oficial que use `/alter-reset-all` para iniciar otra.', flags: MessageFlags.Ephemeral });
+      if (!available.length) return interaction.reply({ content: `La ronda ya terminó: las ${CLASSES.length} clases están asignadas. Pide a un oficial que use `/alter-reset-all` para iniciar otra.`, flags: MessageFlags.Ephemeral });
 
       // SQLite uniqueness constraints protect both one assignment per player and one player per class.
       const picked = pickRandom(available);
@@ -149,7 +149,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const body = rows.length
         ? rows.map((entry) => `**${entry.class_name}**${entry.role ? ` · ${entry.role}` : ''} — <@${entry.user_id}>`).join('\n')
         : 'Todavía no hay asignaciones.';
-      return interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND).setTitle(`📜 Asignaciones Whitebird (${rows.length}/12)`).setDescription(body).setFooter({ text: 'Cada clase se asigna una sola vez por ronda.' })], flags: MessageFlags.Ephemeral });
+      return interaction.reply({ embeds: [new EmbedBuilder().setColor(BRAND).setTitle(`📜 Asignaciones Whitebird (${rows.length}/${CLASSES.length})`).setDescription(body).setFooter({ text: 'Cada clase se asigna una sola vez por ronda.' })], flags: MessageFlags.Ephemeral });
     }
 
     if (interaction.commandName === 'alter-reset') {

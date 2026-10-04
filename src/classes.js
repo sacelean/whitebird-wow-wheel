@@ -10,7 +10,8 @@ export const CLASSES = [
   { name: 'Warlock', color: '#8788ee', emoji: '🌀', roles: ['DPS'] },
   { name: 'Warrior', color: '#c69b6d', emoji: '⚔️', roles: ['Tanque', 'DPS'] },
   { name: 'DK', color: '#c41e3a', emoji: '☠️', roles: ['Tanque', 'DPS'] },
-  { name: 'DH', color: '#a330c9', emoji: '👁️', roles: ['Tanque', 'DPS'] }
+  { name: 'DH', color: '#a330c9', emoji: '👁️', roles: ['Tanque', 'DPS'] },
+  { name: 'Evoker', color: '#33937f', emoji: '🐉', roles: ['DPS', 'Sanador'] }
 ];
 
 export const CLASS_BY_NAME = new Map(CLASSES.map((wowClass) => [wowClass.name, wowClass]));

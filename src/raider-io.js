@@ -11,7 +11,7 @@ function classToBotName(characterClass) {
   const normalized = String(typeof characterClass === 'object' ? characterClass?.name : characterClass || '')
     .toLowerCase().replace(/[^a-z]/g, '');
   const aliases = {
-    druid: 'Druid', hunter: 'Hunter', mage: 'Mage', monk: 'Monk', paladin: 'Paladin',
+    druid: 'Druid', evoker: 'Evoker', hunter: 'Hunter', mage: 'Mage', monk: 'Monk', paladin: 'Paladin',
     priest: 'Priest', rogue: 'Rogue', shaman: 'Shaman', warlock: 'Warlock', warrior: 'Warrior',
     deathknight: 'DK', demonhunter: 'DH', dk: 'DK', dh: 'DH'
   };

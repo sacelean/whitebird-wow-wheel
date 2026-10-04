@@ -1,13 +1,13 @@
 # Whitebird WoW Class Wheel
 
-Bot de Discord para repartir las 12 clases de WoW entre miembros de Whitebird. Publica una ruleta visual, asigna una clase única por jugador y conserva todo aunque el bot se reinicie.
+Bot de Discord para repartir las 13 clases de WoW entre miembros de Whitebird. Publica una ruleta visual, asigna una clase única por jugador y conserva todo aunque el bot se reinicie.
 
 ## Cómo funciona
 
 - Un oficial publica el panel con `/ruleta-alter`.
 - Cada miembro pulsa **Girar la ruleta** una vez por ronda. El bot muestra el resultado de forma privada y actualiza la imagen y las clases disponibles en el panel.
 - El resultado también incluye un rol elegido al azar entre los que puede desempeñar esa clase: Tanque, DPS o Sanador. La clase se sortea primero y el rol se guarda junto con ella.
-- Ninguna clase se repite durante una ronda. Al repartir las 12, el botón se desactiva.
+- Ninguna clase se repite durante una ronda. Al repartir las 13, el botón se desactiva.
 - `/mi-alter` consulta tu resultado y `/alter-list` muestra la lista completa (visible solo para quien ejecuta el comando).
 - `/alter-spec usuario spec` permite a un oficial cambiar el rol de un alter asignado, validando que su clase pueda desempeñarlo.
 - Cada miembro puede vincular un personaje de WoW con `/registrar-alter nombre reino region`. El personaje debe ser de la clase asignada por la ruleta; cada miembro registra uno.
@@ -15,7 +15,7 @@ Bot de Discord para repartir las 12 clases de WoW entre miembros de Whitebird. P
 - `/alter-reset usuario` libera una asignación individual; `/alter-reset-all confirmar:true` empieza una ronda nueva.
 - Los resultados se guardan en SQLite, separados por servidor. Los reinicios del proceso no los borran.
 
-Clases incluidas: Druid, Hunter, Mage, Monk, Paladin, Priest, Rogue, Shaman, Warlock, Warrior, DK y DH. La imagen de la ruleta dibuja las letras como formas vectoriales para evitar problemas de fuentes en Docker.
+Clases incluidas: Druid, Hunter, Mage, Monk, Paladin, Priest, Rogue, Shaman, Warlock, Warrior, DK, DH y Evoker. Evoker puede recibir DPS o Sanador. La imagen de la ruleta dibuja las letras como formas vectoriales para evitar problemas de fuentes en Docker.
 
 ## 1. Crear la aplicación y el bot
 
