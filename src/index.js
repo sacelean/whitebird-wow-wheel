@@ -15,7 +15,7 @@ import {
 import { CLASSES, CLASS_BY_NAME } from './classes.js';
 import {
   assignClass, getAssignment, getAssignments, getPanel, getUsedClasses,
-  getWowCharacters, resetGuild, resetUser, savePanel, saveWowCharacter,
+  getWowCharacter, getWowCharacters, resetGuild, resetUser, savePanel, saveWowCharacter,
   updateRole, updateWowCharacterStats
 } from './database.js';
 import { makeWheelImage } from './wheel-image.js';
@@ -141,7 +141,57 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.commandName === 'mi-alter') {
       const assignment = getAssignment(interaction.guildId, interaction.user.id);
-      return interaction.reply({ content: assignment ? `Tu asignación es **${assignment.class_name}**${assignment.role ? ` · **${assignment.role}**` : ''}.` : 'Aún no has girado. Busca el mensaje de la ruleta y pulsa **Girar la ruleta**.', flags: MessageFlags.Ephemeral });
+      if (!assignment) return interaction.reply({ content: 'Aún no has girado. Busca el mensaje de la ruleta y pulsa **Girar la ruleta**.', flags: MessageFlags.Ephemeral });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      const wowClass = CLASS_BY_NAME.get(assignment.class_name);
+      let character = getWowCharacter(interaction.guildId, interaction.user.id);
+      let refreshFailed = false;
+      if (character) {
+        const cacheAge = character.data_updated_at ? Date.now() - Date.parse(character.data_updated_at) : Infinity;
+        if (cacheAge >= 30 * 60 * 1000) {
+          try {
+            const latest = await fetchRaiderIoCharacter(character.region, character.realm, character.character_name);
+            if (latest.characterClass !== assignment.class_name) throw new Error('CLASS_MISMATCH');
+            updateWowCharacterStats(interaction.guildId, interaction.user.id, latest);
+            character = {
+              ...character,
+              item_level: latest.itemLevel,
+              best_key: latest.bestKey,
+              best_dungeon: latest.bestDungeon,
+              data_updated_at: latest.dataUpdatedAt
+            };
+          } catch {
+            refreshFailed = true;
+          }
+        }
+      }
+
+      const profileUrl = character
+        ? raiderIoCharacterUrl(character.region, character.realm_slug, character.character_name)
+        : null;
+      const card = new EmbedBuilder()
+        .setColor(wowClass ? Number.parseInt(wowClass.color.slice(1), 16) : BRAND)
+        .setTitle(`🧾 Ficha del alter de ${interaction.user.globalName || interaction.user.username}`)
+        .setDescription('Tu asignación y el progreso de tu personaje en WoW.')
+        .addFields(
+          { name: 'Clase', value: `${wowClass?.emoji || '⚔️'} ${assignment.class_name}`, inline: true },
+          { name: 'Rol', value: assignment.role || 'Sin especificar', inline: true },
+          { name: 'Ilvl equipado', value: character?.item_level != null ? `**${Number(character.item_level).toFixed(1)}**` : 'Sin datos', inline: true },
+          { name: 'Mejor piedra M+ · temporada actual', value: character?.best_key
+            ? `**+${character.best_key}**${character.best_dungeon ? ` · ${character.best_dungeon}` : ''}`
+            : character ? 'Sin M+ registrada' : 'Registra primero tu personaje con `/registrar-alter`', inline: false },
+          { name: 'Personaje', value: character
+            ? `[${character.character_name} — ${character.realm}](${profileUrl})`
+            : 'Todavía no has vinculado un personaje.', inline: false }
+        )
+        .setFooter({ text: character
+          ? `Datos de Raider.IO${refreshFailed ? ' · mostrando la última consulta disponible' : ''}`
+          : 'Después de registrar tu alter, aquí aparecerán sus datos de Raider.IO.' });
+      if (character?.data_updated_at) {
+        const updatedAt = Math.floor(Date.parse(character.data_updated_at) / 1000);
+        if (Number.isFinite(updatedAt)) card.setTimestamp(new Date(updatedAt * 1000));
+      }
+      return interaction.editReply({ embeds: [card] });
     }
 
     if (interaction.commandName === 'alter-list') {

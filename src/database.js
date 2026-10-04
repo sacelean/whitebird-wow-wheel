@@ -119,6 +119,13 @@ export function getWowCharacters(guildId) {
     WHERE wc.guild_id = ? ORDER BY wc.character_name COLLATE NOCASE`).all(guildId);
 }
 
+export function getWowCharacter(guildId, userId) {
+  return db.prepare(`SELECT wc.*, a.class_name, a.role
+    FROM wow_characters wc
+    JOIN assignments a ON a.guild_id = wc.guild_id AND a.user_id = wc.user_id
+    WHERE wc.guild_id = ? AND wc.user_id = ?`).get(guildId, userId);
+}
+
 export function updateWowCharacterStats(guildId, userId, stats) {
   return db.prepare(`UPDATE wow_characters
     SET item_level = ?, best_key = ?, best_dungeon = ?, data_updated_at = ?

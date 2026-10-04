@@ -8,7 +8,7 @@ Bot de Discord para repartir las 13 clases de WoW entre miembros de Whitebird. P
 - Cada miembro pulsa **Girar la ruleta** una vez por ronda. El bot muestra el resultado de forma privada y actualiza la imagen y las clases disponibles en el panel.
 - El resultado también incluye un rol elegido al azar entre los que puede desempeñar esa clase: Tanque, DPS o Sanador. La clase se sortea primero y el rol se guarda junto con ella.
 - Ninguna clase se repite durante una ronda. Al repartir las 13, el botón se desactiva.
-- `/mi-alter` consulta tu resultado y `/alter-list` muestra la lista completa (visible solo para quien ejecuta el comando).
+- `/mi-alter` muestra una ficha privada con tu clase, rol, ilvl equipado, mejor piedra M+ y enlace a Raider.IO; `/alter-list` muestra la lista completa (visible solo para quien ejecuta el comando).
 - `/alter-spec usuario spec` permite a un oficial cambiar el rol de un alter asignado, validando que su clase pueda desempeñarlo.
 - Cada miembro puede vincular un personaje de WoW con `/registrar-alter nombre reino region`. El personaje debe ser de la clase asignada por la ruleta; cada miembro registra uno.
 - `/ranking-alters` muestra los personajes registrados ordenados por su piedra M+ más alta de la temporada actual, con ilvl equipado como desempate. `actualizar: true` solicita datos nuevos a Raider.IO.
