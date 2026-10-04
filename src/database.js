@@ -33,6 +33,7 @@ db.exec(`
     realm TEXT NOT NULL,
     realm_slug TEXT NOT NULL,
     region TEXT NOT NULL,
+    thumbnail_url TEXT,
     item_level REAL,
     best_key INTEGER,
     best_dungeon TEXT,
@@ -47,6 +48,8 @@ db.exec(`
 // Keep existing installations working when upgrading from a class-only version.
 const assignmentColumns = db.prepare('PRAGMA table_info(assignments)').all().map((column) => column.name);
 if (!assignmentColumns.includes('role')) db.exec('ALTER TABLE assignments ADD COLUMN role TEXT');
+const characterColumns = db.prepare('PRAGMA table_info(wow_characters)').all().map((column) => column.name);
+if (!characterColumns.includes('thumbnail_url')) db.exec('ALTER TABLE wow_characters ADD COLUMN thumbnail_url TEXT');
 const legacyAssignments = db.prepare('SELECT guild_id, user_id, class_name FROM assignments WHERE role IS NULL').all();
 const backfillRole = db.prepare('UPDATE assignments SET role = ? WHERE guild_id = ? AND user_id = ?');
 for (const assignment of legacyAssignments) {
@@ -102,14 +105,14 @@ export function getPanel(guildId) {
 
 export function saveWowCharacter(guildId, userId, character) {
   return db.prepare(`INSERT INTO wow_characters
-      (guild_id, user_id, character_name, realm, realm_slug, region, item_level, best_key, best_dungeon, data_updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (guild_id, user_id, character_name, realm, realm_slug, region, thumbnail_url, item_level, best_key, best_dungeon, data_updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(guild_id, user_id) DO UPDATE SET
       character_name=excluded.character_name, realm=excluded.realm, realm_slug=excluded.realm_slug,
-      region=excluded.region, item_level=excluded.item_level, best_key=excluded.best_key,
+      region=excluded.region, thumbnail_url=excluded.thumbnail_url, item_level=excluded.item_level, best_key=excluded.best_key,
       best_dungeon=excluded.best_dungeon, data_updated_at=excluded.data_updated_at, registered_at=CURRENT_TIMESTAMP`)
     .run(guildId, userId, character.characterName, character.realm, character.realmSlug,
-      character.region, character.itemLevel, character.bestKey, character.bestDungeon, character.dataUpdatedAt);
+      character.region, character.thumbnailUrl || '', character.itemLevel, character.bestKey, character.bestDungeon, character.dataUpdatedAt);
 }
 
 export function getWowCharacters(guildId) {
@@ -128,7 +131,7 @@ export function getWowCharacter(guildId, userId) {
 
 export function updateWowCharacterStats(guildId, userId, stats) {
   return db.prepare(`UPDATE wow_characters
-    SET item_level = ?, best_key = ?, best_dungeon = ?, data_updated_at = ?
+    SET thumbnail_url = ?, item_level = ?, best_key = ?, best_dungeon = ?, data_updated_at = ?
     WHERE guild_id = ? AND user_id = ?`)
-    .run(stats.itemLevel, stats.bestKey, stats.bestDungeon, stats.dataUpdatedAt, guildId, userId).changes;
+    .run(stats.thumbnailUrl || '', stats.itemLevel, stats.bestKey, stats.bestDungeon, stats.dataUpdatedAt, guildId, userId).changes;
 }

@@ -148,13 +148,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       let refreshFailed = false;
       if (character) {
         const cacheAge = character.data_updated_at ? Date.now() - Date.parse(character.data_updated_at) : Infinity;
-        if (cacheAge >= 30 * 60 * 1000) {
+        if (character.thumbnail_url == null || cacheAge >= 30 * 60 * 1000) {
           try {
             const latest = await fetchRaiderIoCharacter(character.region, character.realm, character.character_name);
             if (latest.characterClass !== assignment.class_name) throw new Error('CLASS_MISMATCH');
             updateWowCharacterStats(interaction.guildId, interaction.user.id, latest);
             character = {
               ...character,
+              thumbnail_url: latest.thumbnailUrl,
               item_level: latest.itemLevel,
               best_key: latest.bestKey,
               best_dungeon: latest.bestDungeon,
@@ -191,6 +192,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         const updatedAt = Math.floor(Date.parse(character.data_updated_at) / 1000);
         if (Number.isFinite(updatedAt)) card.setTimestamp(new Date(updatedAt * 1000));
       }
+      if (character?.thumbnail_url) card.setImage(character.thumbnail_url);
       return interaction.editReply({ embeds: [card] });
     }
 

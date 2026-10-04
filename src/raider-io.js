@@ -39,6 +39,13 @@ export async function fetchRaiderIoCharacter(region, realm, name) {
   }, null);
   const itemLevel = Number(profile.gear?.item_level_equipped);
   if (!Number.isFinite(itemLevel) || !profileClass) throw new Error('INCOMPLETE_PROFILE');
+  let thumbnailUrl = null;
+  try {
+    const candidate = new URL(profile.thumbnail_url);
+    if (candidate.protocol === 'https:') thumbnailUrl = candidate.toString();
+  } catch {
+    // Some Raider.IO profiles do not have a character image.
+  }
 
   return {
     characterName: profile.name || name,
@@ -47,6 +54,7 @@ export async function fetchRaiderIoCharacter(region, realm, name) {
     realmSlug,
     region,
     itemLevel,
+    thumbnailUrl,
     bestKey: bestRun?.level || null,
     bestDungeon: bestRun?.dungeon || null,
     dataUpdatedAt: new Date().toISOString()
