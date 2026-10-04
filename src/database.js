@@ -26,6 +26,22 @@ db.exec(`
     message_id TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+  CREATE TABLE IF NOT EXISTS wow_characters (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    character_name TEXT NOT NULL,
+    realm TEXT NOT NULL,
+    realm_slug TEXT NOT NULL,
+    region TEXT NOT NULL,
+    item_level REAL,
+    best_key INTEGER,
+    best_dungeon TEXT,
+    data_updated_at TEXT,
+    registered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (guild_id, user_id)
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS wow_characters_unique_character
+    ON wow_characters (guild_id, region, realm_slug, character_name COLLATE NOCASE);
 `);
 
 // Keep existing installations working when upgrading from a class-only version.
@@ -55,7 +71,11 @@ export function assignClass(guildId, userId, className, role) {
 }
 
 export function resetUser(guildId, userId) {
-  return db.prepare('DELETE FROM assignments WHERE guild_id = ? AND user_id = ?').run(guildId, userId).changes;
+  return db.transaction(() => {
+    const removed = db.prepare('DELETE FROM assignments WHERE guild_id = ? AND user_id = ?').run(guildId, userId).changes;
+    db.prepare('DELETE FROM wow_characters WHERE guild_id = ? AND user_id = ?').run(guildId, userId);
+    return removed;
+  })();
 }
 
 export function updateRole(guildId, userId, role) {
@@ -63,7 +83,11 @@ export function updateRole(guildId, userId, role) {
 }
 
 export function resetGuild(guildId) {
-  return db.prepare('DELETE FROM assignments WHERE guild_id = ?').run(guildId).changes;
+  return db.transaction(() => {
+    const removed = db.prepare('DELETE FROM assignments WHERE guild_id = ?').run(guildId).changes;
+    db.prepare('DELETE FROM wow_characters WHERE guild_id = ?').run(guildId);
+    return removed;
+  })();
 }
 
 export function savePanel(guildId, channelId, messageId) {
@@ -74,4 +98,30 @@ export function savePanel(guildId, channelId, messageId) {
 
 export function getPanel(guildId) {
   return db.prepare('SELECT channel_id, message_id FROM panels WHERE guild_id = ?').get(guildId);
+}
+
+export function saveWowCharacter(guildId, userId, character) {
+  return db.prepare(`INSERT INTO wow_characters
+      (guild_id, user_id, character_name, realm, realm_slug, region, item_level, best_key, best_dungeon, data_updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(guild_id, user_id) DO UPDATE SET
+      character_name=excluded.character_name, realm=excluded.realm, realm_slug=excluded.realm_slug,
+      region=excluded.region, item_level=excluded.item_level, best_key=excluded.best_key,
+      best_dungeon=excluded.best_dungeon, data_updated_at=excluded.data_updated_at, registered_at=CURRENT_TIMESTAMP`)
+    .run(guildId, userId, character.characterName, character.realm, character.realmSlug,
+      character.region, character.itemLevel, character.bestKey, character.bestDungeon, character.dataUpdatedAt);
+}
+
+export function getWowCharacters(guildId) {
+  return db.prepare(`SELECT wc.*, a.class_name, a.role
+    FROM wow_characters wc
+    JOIN assignments a ON a.guild_id = wc.guild_id AND a.user_id = wc.user_id
+    WHERE wc.guild_id = ? ORDER BY wc.character_name COLLATE NOCASE`).all(guildId);
+}
+
+export function updateWowCharacterStats(guildId, userId, stats) {
+  return db.prepare(`UPDATE wow_characters
+    SET item_level = ?, best_key = ?, best_dungeon = ?, data_updated_at = ?
+    WHERE guild_id = ? AND user_id = ?`)
+    .run(stats.itemLevel, stats.bestKey, stats.bestDungeon, stats.dataUpdatedAt, guildId, userId).changes;
 }

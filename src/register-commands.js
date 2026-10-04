@@ -27,6 +27,22 @@ const commands = [
         { name: 'Sanador', value: 'Sanador' }
       )),
   new SlashCommandBuilder()
+    .setName('registrar-alter')
+    .setDescription('Vincula el personaje que te tocó en la ruleta')
+    .addStringOption((option) => option.setName('nombre').setDescription('Nombre del personaje en WoW').setRequired(true).setMaxLength(24))
+    .addStringOption((option) => option.setName('reino').setDescription('Reino (por ejemplo, Sanguino)').setRequired(true).setMaxLength(40))
+    .addStringOption((option) => option.setName('region').setDescription('Región del personaje').setRequired(true)
+      .addChoices(
+        { name: 'Europa', value: 'eu' },
+        { name: 'América', value: 'us' },
+        { name: 'Corea', value: 'kr' },
+        { name: 'Taiwán', value: 'tw' }
+      )),
+  new SlashCommandBuilder()
+    .setName('ranking-alters')
+    .setDescription('Muestra ilvl equipado y la mejor piedra M+ de los alters registrados')
+    .addBooleanOption((option) => option.setName('actualizar').setDescription('Solicita datos recientes a Raider.IO').setRequired(false)),
+  new SlashCommandBuilder()
     .setName('alter-reset-all')
     .setDescription('Libera todas las clases e inicia una ronda (oficiales)')
     .addBooleanOption((option) => option.setName('confirmar').setDescription('Confirma el reinicio de la ronda').setRequired(true))

@@ -15,9 +15,11 @@ import {
 import { CLASSES, CLASS_BY_NAME } from './classes.js';
 import {
   assignClass, getAssignment, getAssignments, getPanel, getUsedClasses,
-  resetGuild, resetUser, savePanel, updateRole
+  getWowCharacters, resetGuild, resetUser, savePanel, saveWowCharacter,
+  updateRole, updateWowCharacterStats
 } from './database.js';
 import { makeWheelImage } from './wheel-image.js';
+import { fetchRaiderIoCharacter, raiderIoCharacterUrl } from './raider-io.js';
 
 const token = process.env.DISCORD_TOKEN;
 if (!token) throw new Error('Falta DISCORD_TOKEN. Copia .env.example a .env y añade el token del bot.');
@@ -170,6 +172,72 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
       updateRole(interaction.guildId, target.id, requestedRole);
       return interaction.reply({ content: `Actualizado: el alter **${assignment.class_name}** de <@${target.id}> ahora tiene rol **${requestedRole}**.`, flags: MessageFlags.Ephemeral });
+    }
+
+    if (interaction.commandName === 'registrar-alter') {
+      const assignment = getAssignment(interaction.guildId, interaction.user.id);
+      if (!assignment) return interaction.reply({ content: 'Primero tienes que girar la ruleta y recibir una clase.', flags: MessageFlags.Ephemeral });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      const name = interaction.options.getString('nombre', true).trim();
+      const realm = interaction.options.getString('reino', true).trim();
+      const region = interaction.options.getString('region', true);
+      let character;
+      try {
+        character = await fetchRaiderIoCharacter(region, realm, name);
+      } catch (error) {
+        const reason = error.message === 'NOT_FOUND'
+          ? 'No encuentro ese personaje en Raider.IO. Comprueba el nombre, reino y región, y que el perfil esté disponible.'
+          : error.message === 'RATE_LIMITED'
+            ? 'Raider.IO está limitando las consultas ahora mismo. Espera un poco y vuelve a intentarlo.'
+            : error.message === 'INCOMPLETE_PROFILE'
+              ? 'Raider.IO no devuelve todavía datos completos de clase/equipo para ese personaje.'
+              : 'No he podido consultar Raider.IO ahora. Inténtalo de nuevo más tarde.';
+        return interaction.editReply(reason);
+      }
+      if (character.characterClass !== assignment.class_name) {
+        return interaction.editReply(`Tu clase asignada es **${assignment.class_name}**, pero ese personaje aparece como **${character.characterClass}** en Raider.IO. Registra un personaje de la clase que te tocó.`);
+      }
+      try {
+        saveWowCharacter(interaction.guildId, interaction.user.id, character);
+      } catch {
+        return interaction.editReply('Ese personaje ya está vinculado a otra persona de Whitebird. Si es un error, avisa a un oficial.');
+      }
+      const profileUrl = raiderIoCharacterUrl(region, character.realmSlug, character.characterName);
+      return interaction.editReply(`Personaje vinculado: [${character.characterName} — ${realm}](${profileUrl}) · **${assignment.class_name}** · ilvl **${character.itemLevel.toFixed(1)}**.`);
+    }
+
+    if (interaction.commandName === 'ranking-alters') {
+      if (!isOfficer(interaction)) return interaction.reply(unauthorizedReply());
+      await interaction.deferReply();
+      let characters = getWowCharacters(interaction.guildId);
+      if (!characters.length) return interaction.editReply('Todavía nadie ha registrado su alter. Usa `/registrar-alter` después de girar la ruleta.');
+
+      const forceRefresh = interaction.options.getBoolean('actualizar') ?? false;
+      const staleAfterMs = 30 * 60 * 1000;
+      const refreshResults = await Promise.all(characters.map(async (character) => {
+        const cacheAge = character.data_updated_at ? Date.now() - Date.parse(character.data_updated_at) : Infinity;
+        if (!forceRefresh && cacheAge < staleAfterMs) return { character, failed: false };
+        try {
+          const latest = await fetchRaiderIoCharacter(character.region, character.realm, character.character_name);
+          if (latest.characterClass !== character.class_name) throw new Error('CLASS_MISMATCH');
+          updateWowCharacterStats(interaction.guildId, character.user_id, latest);
+          return { character: { ...character, ...latest }, failed: false };
+        } catch {
+          return { character, failed: true };
+        }
+      }));
+      characters = refreshResults.map((result) => result.character);
+      characters.sort((a, b) => (b.best_key ?? -1) - (a.best_key ?? -1) || (b.item_level ?? -1) - (a.item_level ?? -1));
+
+      const rows = characters.map((character, index) => {
+        const profileUrl = raiderIoCharacterUrl(character.region, character.realm_slug, character.character_name);
+        const ilvl = character.item_level != null && Number.isFinite(Number(character.item_level)) ? Number(character.item_level).toFixed(1) : 'sin datos';
+        const key = character.best_key ? `+${character.best_key}${character.best_dungeon ? ` ${character.best_dungeon}` : ''}` : 'sin M+ registrada';
+        return `**${index + 1}.** [${character.character_name} — ${character.realm}](${profileUrl}) · <@${character.user_id}> · ${character.class_name} · ilvl **${ilvl}** · **${key}**`;
+      });
+      const failedCount = refreshResults.filter((result) => result.failed).length;
+      const description = `Clasificado por piedra más alta; empate desempatado por ilvl. Datos de [Raider.IO](https://raider.io), que pueden tener retraso.\n\n${rows.join('\n')}${failedCount ? `\n\n_${failedCount} perfil(es) no pudieron actualizarse; se muestran los últimos datos guardados._` : ''}`;
+      return interaction.editReply({ embeds: [new EmbedBuilder().setColor(BRAND).setTitle(`🏆 Ranking de alters · Whitebird (${characters.length})`).setDescription(description).setFooter({ text: 'Usa /ranking-alters actualizar:true para pedir una consulta nueva a Raider.IO.' })] });
     }
 
     if (interaction.commandName === 'alter-reset-all') {

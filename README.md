@@ -4,12 +4,14 @@ Bot de Discord para repartir las 12 clases de WoW entre miembros de Whitebird. P
 
 ## Cómo funciona
 
-- Un oficial publica el panel con `/ruleta`.
+- Un oficial publica el panel con `/ruleta-alter`.
 - Cada miembro pulsa **Girar la ruleta** una vez por ronda. El bot muestra el resultado de forma privada y actualiza la imagen y las clases disponibles en el panel.
 - El resultado también incluye un rol elegido al azar entre los que puede desempeñar esa clase: Tanque, DPS o Sanador. La clase se sortea primero y el rol se guarda junto con ella.
 - Ninguna clase se repite durante una ronda. Al repartir las 12, el botón se desactiva.
 - `/mi-alter` consulta tu resultado y `/alter-list` muestra la lista completa (visible solo para quien ejecuta el comando).
 - `/alter-spec usuario spec` permite a un oficial cambiar el rol de un alter asignado, validando que su clase pueda desempeñarlo.
+- Cada miembro puede vincular un personaje de WoW con `/registrar-alter nombre reino region`. El personaje debe ser de la clase asignada por la ruleta; cada miembro registra uno.
+- `/ranking-alters` muestra los personajes registrados ordenados por su piedra M+ más alta de la temporada actual, con ilvl equipado como desempate. `actualizar: true` solicita datos nuevos a Raider.IO.
 - `/alter-reset usuario` libera una asignación individual; `/alter-reset-all confirmar:true` empieza una ronda nueva.
 - Los resultados se guardan en SQLite, separados por servidor. Los reinicios del proceso no los borran.
 
@@ -40,7 +42,7 @@ OFFICER_ROLE_IDS=id_rol_oficial,id_otro_rol
 
 `DISCORD_GUILD_ID` es opcional pero recomendable inicialmente: registra los comandos al instante en Whitebird. Si se omite, se publican globalmente y Discord puede tardar un rato en mostrarlos. Para copiar IDs activa **Ajustes de usuario → Avanzado → Modo desarrollador** y usa **Copiar ID** en servidor y roles.
 
-Los comandos `/alter-reset`, `/alter-reset-all` y `/alter-spec` solo están disponibles para miembros con **Gestionar servidor** o alguno de los roles indicados en `OFFICER_ROLE_IDS`. Déjalo vacío para basarte únicamente en el permiso de Discord. Reinicia el proceso después de cambiar `.env`.
+Los comandos `/alter-reset`, `/alter-reset-all`, `/alter-spec` y `/ranking-alters` solo están disponibles para miembros con **Gestionar servidor** o alguno de los roles indicados en `OFFICER_ROLE_IDS`. Déjalo vacío para basarte únicamente en el permiso de Discord. Reinicia el proceso después de cambiar `.env`.
 
 ## 3. Ejecutar con Docker (recomendado)
 
@@ -74,13 +76,15 @@ Deja el proceso en un equipo/servidor que esté encendido. Para que se recupere 
 ## Primer uso en Whitebird
 
 1. Espera a que el bot aparezca conectado.
-2. Ejecuta `/ruleta` en el canal donde quieras dejar el panel (o elige el canal en la opción `canal`).
+2. Ejecuta `/ruleta-alter` en el canal donde quieras dejar el panel (o elige el canal en la opción `canal`).
 3. Los miembros usan el botón del mensaje.
 4. Comprueba resultados con `/alter-list`; cada miembro también puede usar `/mi-alter`.
 5. Un oficial puede ajustar el rol con `/alter-spec usuario spec`.
-6. Para iniciar temporada nueva, un oficial ejecuta `/alter-reset-all` y elige `confirmar: true`.
+6. Cada miembro vincula su personaje asignado con `/registrar-alter nombre reino region` (regiones admitidas: EU, US, KR y TW).
+7. Consulta la clasificación con `/ranking-alters`; usa `actualizar: true` para solicitar una consulta nueva a Raider.IO.
+8. Para iniciar temporada nueva, un oficial ejecuta `/alter-reset-all` y elige `confirmar: true`.
 
-No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirían asignando, pero `/ruleta` registra el panel que el bot actualizará. Si borras el panel, publica otro con `/ruleta`.
+No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirían asignando, pero `/ruleta-alter` registra el panel que el bot actualizará. Si borras el panel, publica otro con `/ruleta-alter`.
 
 ## Estructura
 
@@ -90,6 +94,6 @@ No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirí
 - `src/register-commands.js`: registro de comandos de aplicación.
 - `Dockerfile` y `compose.yaml`: despliegue persistente.
 
-El bot no asigna roles de Discord automáticamente; la clase queda guardada y visible en la lista del bot.
+El bot no asigna roles de Discord automáticamente; la clase queda guardada y visible en la lista del bot. El ranking consulta la API pública de [Raider.IO](https://raider.io/api), no necesita token, enlaza cada perfil como atribución y puede reflejar los cambios con retraso. Se conservan en SQLite el personaje vinculado y los últimos datos consultados para que el ranking siga disponible si Raider.IO no responde temporalmente.
 
 Al actualizar desde la primera versión, se conservan las clases ya asignadas y el bot les añade un rol compatible durante el arranque.
