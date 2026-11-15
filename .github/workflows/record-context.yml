@@ -1,0 +1,34 @@
+name: Record manually verified wheel deployment
+on:
+  workflow_dispatch:
+    inputs:
+      deployed_revision:
+        description: Full 40-character SHA already deployed and checked in Discord
+        type: string
+        required: true
+      verified:
+        description: I verified this revision is running and connected to Discord
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: wheel-context-record
+  cancel-in-progress: false
+jobs:
+  record:
+    if: github.ref == 'refs/heads/main' && inputs.verified && vars.CONTEXT_REPORT_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record confirmed deployment only
+        env:
+          DEPLOYED_REVISION: ${{ inputs.deployed_revision }}
+          WHITEBIRD_CONTEXT_WRITE_TOKEN: ${{ secrets.WHITEBIRD_CONTEXT_WRITE_TOKEN }}
+        run: node scripts/record-context-deployment.mjs
