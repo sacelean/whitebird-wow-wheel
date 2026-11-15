@@ -97,3 +97,7 @@ No borres el mensaje del panel: los botones de otros mensajes de ruleta seguirí
 El bot no asigna roles de Discord automáticamente; la clase queda guardada y visible en la lista del bot. El ranking consulta la API pública de [Raider.IO](https://raider.io/api), no necesita token, enlaza cada perfil como atribución y puede reflejar los cambios con retraso. Se conservan en SQLite el personaje vinculado y los últimos datos consultados para que el ranking siga disponible si Raider.IO no responde temporalmente.
 
 Al actualizar desde la primera versión, se conservan las clases ya asignadas y el bot les añade un rol compatible durante el arranque.
+
+## Documentación del chatbot
+
+Mantener [docs/knowledge.json](docs/knowledge.json) junto con cada cambio de comportamiento. La pipeline publica la versión verificada en este mismo repositorio y Whitebird-context la recoge con acceso de lectura. Ver [flujo y comprobaciones](docs/context-publication.md).

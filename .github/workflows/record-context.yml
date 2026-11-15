@@ -1,24 +1,24 @@
-name: Record manually verified wheel deployment
+name: Publish manually verified wheel documentation
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       deployed_revision:
-        description: Full 40-character SHA already deployed and checked in Discord
+        description: Full SHA deployed in Discord and described by docs/knowledge.json
         type: string
         required: true
       verified:
-        description: I verified this revision is running and connected to Discord
+        description: I verified deployment and documentation match this revision
         type: boolean
         required: true
         default: false
 permissions:
   contents: read
 concurrency:
-  group: wheel-context-record
+  group: wheel-knowledge-publication
   cancel-in-progress: false
 jobs:
-  record:
-    if: github.ref == 'refs/heads/main' && inputs.verified && vars.CONTEXT_REPORT_ENABLED == 'true'
+  validate:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -27,8 +27,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Record confirmed deployment only
+      - run: node scripts/publish-knowledge.mjs --validate
+      - run: node --test scripts/check-knowledge.mjs
+  publish:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.verified
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Publish manually verified documentation in this repository
         env:
           DEPLOYED_REVISION: ${{ inputs.deployed_revision }}
-          WHITEBIRD_CONTEXT_WRITE_TOKEN: ${{ secrets.WHITEBIRD_CONTEXT_WRITE_TOKEN }}
-        run: node scripts/record-context-deployment.mjs
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/publish-knowledge.mjs
