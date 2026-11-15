@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "roulette",
+  "reviewedAt": "2026-11-15",
+  "source": "sacelean/whitebird-wow-wheel, README.md y src/register-commands.js, main revisado 2026-11-15",
+  "summary": "Sortea 13 clases únicas por ronda y un rol compatible, registra personajes de alters y muestra su ranking de M+ con datos de Raider.IO.",
+  "overview": "/ruleta-alter publica el panel. Cada miembro gira una vez por ronda y recibe una clase disponible y un rol compatible, Tanque, DPS o Sanador. Cada clase se asigna una sola vez y, al repartir las 13, la ronda termina. /mi-alter muestra la ficha privada y /alter-list las asignaciones. Los resultados persisten en SQLite tras reiniciar. Puedes preguntar por giros, registro de personaje, ranking, cambio de rol, reinicio de ronda o permisos.",
+  "topics": [
+    "/ranking-alters ordena los personajes registrados por su mejor piedra M+ de la temporada actual y usa el ilvl equipado para desempatar. Está reservado a Gestionar servidor o OFFICER_ROLE_IDS. actualizar:true solicita datos nuevos a Raider.IO. La caché dura 30 minutos y, si la consulta falla, conserva los últimos datos guardados. /mi-alter muestra la ficha privada del personaje. Esta explicación describe el cálculo y los comandos, sin consultar la clasificación actual.",
+    "Primero gira la ruleta. Después usa /registrar-alter nombre reino region con un personaje de la clase que te tocó. Se admite EU, US, KR y TW. El bot valida la clase consultando Raider.IO y guarda un personaje por miembro. Si el personaje ya está vinculado a otra persona, rechaza el registro. /mi-alter muestra clase, rol, ilvl, mejor M+ y enlace al perfil. Si Raider.IO falla o devuelve datos incompletos, espera y vuelve a intentarlo.",
+    "Un oficial usa /alter-reset usuario para liberar una asignación y permitir otro giro. /alter-reset-all confirmar:true libera todas las clases e inicia una ronda nueva. Requieren Gestionar servidor o un rol de OFFICER_ROLE_IDS. Reiniciar el proceso conserva las asignaciones de SQLite. Estos comandos cambian la ronda y deben ejecutarse en Discord por una persona autorizada.",
+    "La ruleta sortea primero la clase y después uno de los roles que puede desempeñar. /alter-spec usuario spec permite a un oficial cambiar el rol guardado, validando que sea compatible con la clase. Requiere Gestionar servidor o OFFICER_ROLE_IDS. La asignación de clase y rol queda registrada en SQLite y visible con /mi-alter o /alter-list. Los roles de combate sorteados se guardan como datos de la ruleta.",
+    "Configura DISCORD_TOKEN, DISCORD_CLIENT_ID y los roles de oficiales. DISCORD_GUILD_ID permite registrar los comandos en ese servidor. El bot usa el intent básico Guilds y permisos de Ver canal, Enviar mensajes, Insertar enlaces y Adjuntar archivos. /alter-reset, /alter-reset-all, /alter-spec y /ranking-alters requieren Gestionar servidor o OFFICER_ROLE_IDS. Conserva data/whitebird.sqlite para mantener la ronda y los personajes. Registra los comandos después de cambiar su definición."
+  ]
+}
